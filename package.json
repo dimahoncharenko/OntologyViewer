@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon ./server.ts",
     "build": "npm i && npx tsx ",
-    "start": "node ./src/server.js"
+    "start": "node ./build/server.js"
   },
   "keywords": [],
   "author": "",
