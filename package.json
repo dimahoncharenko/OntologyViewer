@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon ./server.ts"
+    "dev": "nodemon ./server.ts",
+    "build": "npm i && npx tsx ",
+    "start": "node ./src/server.js"
   },
   "keywords": [],
   "author": "",
