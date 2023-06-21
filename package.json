@@ -5,7 +5,11 @@
   "main": "build/server.js",
   "scripts": {
     "dev": "nodemon ./server.ts",
+<<<<<<< HEAD
     "build": "npm install && npx tsc ",
+=======
+    "build": "npm i && npx tsx ",
+>>>>>>> cde92fc26f53f0eea517a3317548eb2600e5d213
     "start": "node ./build/server.js"
   },
   "keywords": [],
