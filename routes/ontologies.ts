@@ -4,7 +4,6 @@ import { graphDBEndpoint } from "../utils/connections";
 import { checkParams } from "../utils/middlewares";
 import {
   transformArray,
-  CredentialError,
   transformIndividualDetails,
   parseProps,
   transformClasses,
@@ -43,27 +42,6 @@ router.get("/", async (_, res) => {
   }
 });
 
-router.post(
-  "/add",
-  checkParams(["className", "subClass"]),
-  async (req, res) => {
-    try {
-      const { className, subClass } = req.body;
-
-      const result = await graphDBEndpoint.update(`
-      INSERT DATA {
-        my:${subClass} rdf:type owl:Class ;
-          rdfs:subClassOf my:${className} .
-      }
-      `);
-
-      res.json(result);
-    } catch (err) {
-      res.status(500).json({ error: err });
-    }
-  }
-);
-
 router.get("/:label", async (req, res) => {
   const { label } = req.params;
 
@@ -93,7 +71,7 @@ router.get("/:label", async (req, res) => {
   }
 });
 
-router.get("/instances/:className", async (req, res) => {
+router.get("/classes/individuals/:className", async (req, res) => {
   try {
     const { className } = req.params;
 
@@ -149,28 +127,6 @@ router.get("/individuals/:name", async (req, res) => {
 });
 
 router.post(
-  "/add/dataProperty",
-  checkParams(["className", "dataPropertyName", "dataPropertyRange"]),
-  async (req, res) => {
-    try {
-      const { className, dataPropertyName, dataPropertyRange } = req.body;
-
-      const result = await graphDBEndpoint.update(`
-        INSERT DATA {
-          my:${dataPropertyName} rdf:type owl:DatatypeProperty ;
-            rdfs:domain my:${className} ;
-            rdfs:range ${dataPropertyRange}
-        }
-    `);
-
-      res.json(result);
-    } catch (err) {
-      res.status(500).json({ error: err });
-    }
-  }
-);
-
-router.post(
   "/add/objectProperty",
   checkParams(["propertyName", "propertyRange", "propertyDomain"]),
   async (req, res) => {
@@ -193,43 +149,7 @@ router.post(
 );
 
 router.post(
-  "/attach/objectProperty",
-  checkParams(["className", "property", "targetClass"]),
-  async (req, res) => {
-    try {
-      const { className, property, targetClass } = req.body;
-
-      const classNameCandidate = await graphDBEndpoint.query(`
-        SELECT ?class ?property ?targetClass WHERE {
-            {?property rdf:type owl:ObjectProperty .
-            FILTER (?property = my:${property})}
-            UNION
-            {?class rdf:type owl:Class .
-            FILTER (?class = my:${className})}
-            UNION
-            {?targetClass rdf:type owl:Class .
-            FILTER (?targetClass = my:${targetClass})}
-          }
-      `);
-
-      if (classNameCandidate.total < 3)
-        throw new CredentialError("Невірні параметри!");
-
-      const insertion = await graphDBEndpoint.update(`
-        INSERT DATA {
-          my:${className} my:${property} my:${targetClass} .
-        }
-      `);
-
-      res.json(insertion.success);
-    } catch (err) {
-      res.status(500).json({ error: err });
-    }
-  }
-);
-
-router.post(
-  "/attach/dataProperty",
+  "/add/dataProperty",
   checkParams(["individualName", "property", "propertyValue"]),
   async (req, res) => {
     try {
@@ -254,7 +174,7 @@ router.post(
   }
 );
 
-router.get("/objects/:className", async (req, res) => {
+router.get("/classes/objects/:className", async (req, res) => {
   try {
     const { className } = req.params;
     const parsedClassName = className.replaceAll(" ", "_");
@@ -270,30 +190,6 @@ router.get("/objects/:className", async (req, res) => {
 
     if (result.records instanceof Array) {
       const parsed = parseProps(result.records);
-      res.json(parsed);
-    } else {
-      res.json(null);
-    }
-  } catch (err) {
-    res.status(500).json({ error: err });
-  }
-});
-
-router.get("/dataProperties/:individual", async (req, res) => {
-  try {
-    const { individual } = req.params;
-
-    const result = await graphDBEndpoint.query(`
-        SELECT ?property ?value
-        WHERE {
-          my:${individual} ?property ?value .
-          ?property rdf:type owl:DatatypeProperty .
-        }
-      `);
-
-    if (result.records instanceof Array) {
-      const parsed = parseProps(result.records);
-      console.log(Object(parsed));
       res.json(parsed);
     } else {
       res.json(null);
